@@ -3,10 +3,9 @@ import asyncio
 from ollama import AsyncClient
 
 import os
-from elevenlabs import VoiceSettings
+from elevenlabs import Voice, VoiceSettings, play
 from elevenlabs.client import ElevenLabs
 
-from playsound import playsound
 
 ELEVENLABS_API_KEY = os.getenv("ELEVENLABS_API_KEY")
 client = ElevenLabs(
@@ -15,28 +14,18 @@ client = ElevenLabs(
 
 
 def text_to_speech_file(text: str) -> str:
-    # Calling the text_to_speech conversion API with detailed parameters
-    response = client.text_to_speech.convert(
-        voice_id="aEJD8mYP0nuof1XHShVY",
-        optimize_streaming_latency="0",
-        output_format="mp3_22050_32",
-        text=text,
-        # use the turbo model for low latency, for other languages use the `eleven_multilingual_v2`
-        model_id="eleven_multilingual_v2",
 
+    audio = client.generate(
+        text=text,
+        voice=Voice(
+            voice_id='aEJD8mYP0nuof1XHShVY',
+            settings=VoiceSettings(
+                stability=0.69, similarity_boost=0.4, style=0.7, use_speaker_boost=True)
+        ),
+        model="eleven_multilingual_v2",
     )
 
-    # Generating a unique file name for the output MP3 file
-    save_file_path = f"output.mp3"
-
-    # Writing the audio to a file
-    with open(save_file_path, "wb") as f:
-        for chunk in response:
-            if chunk:
-                f.write(chunk)
-
-    # Return the path of the saved audio file
-    return save_file_path
+    play(audio)
 
 
 def recognize_speech_from_mic():
@@ -72,7 +61,7 @@ async def chat(content):
 
     print("\n")
 
-    playsound(text_to_speech_file(result))
+    text_to_speech_file(result)
 
 
 def main():
